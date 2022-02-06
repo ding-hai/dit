@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <objects.h>
 
-TEST(Util, CharSequence){
+TEST(Util, CharSequence) {
     const char *c_str = "1234";
     dit::utils::CharSequence sequence(c_str);
     EXPECT_TRUE(sequence.length() == 4);
@@ -18,5 +18,5 @@ TEST(Object, Blob) {
 
     dit::objects::BlobObject *blob_object_read = new dit::objects::BlobObject();
     blob_object_read->read(sha1);
-    EXPECT_TRUE(blob_object_read->content() ==  content);
+    EXPECT_TRUE(blob_object_read->content() == content);
 }

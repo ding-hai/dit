@@ -43,7 +43,7 @@ namespace dit {
             return sequence;
         }
 
-        Object *CommitObject::from_char_sequence(const  utils::CharSequence &file_content) {
+        Object *CommitObject::from_char_sequence(const utils::CharSequence &file_content) {
             return this;
         }
 

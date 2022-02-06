@@ -125,7 +125,7 @@ namespace dit {
         }
 
         size_t CharSequence::find(char c) const {
-            for(size_t i=0; i < length_; i++){
+            for (size_t i = 0; i < length_; i++) {
                 if (c == data_[i]) return i;
             }
             return npos;

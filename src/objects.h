@@ -30,7 +30,7 @@ namespace dit {
             Object() = default;
 
             Object(ObjectType type, const utils::CharSequence &content) : type_(type), size_(content.length()),
-                                                                  content_(content) {}
+                                                                          content_(content) {}
 
             ObjectType type() { return type_; }
 
@@ -47,7 +47,7 @@ namespace dit {
                 return object_writer_.write(content);
             }
 
-            Object* read(std::string &sha1) {
+            Object *read(std::string &sha1) {
                 auto file_content = object_reader_.read(sha1);
                 this->from_char_sequence(file_content);
                 return this;
@@ -69,11 +69,13 @@ namespace dit {
 
         class TreeObject : public Object {
             Object *from_char_sequence(const utils::CharSequence &file_content) override;
+
             utils::CharSequence to_char_sequence() override;
         };
 
         class CommitObject : public Object {
             Object *from_char_sequence(const utils::CharSequence &file_content) override;
+
             utils::CharSequence to_char_sequence() override;
         };
     }

@@ -4,7 +4,7 @@
 
 #include "exceptions.h"
 
-namespace dit{
-    namespace exceptions{
+namespace dit {
+    namespace exceptions {
     }
 }
