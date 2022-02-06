@@ -15,12 +15,12 @@ namespace dit {
 
         class ObjectWriter {
         public:
-            virtual std::string write(const std::string &content);
+            virtual std::string write(const utils::CharSequence &content);
         };
 
         class ObjectReader {
         public:
-            std::string  read(const std::string &sha1);
+            utils::CharSequence read(const std::string &sha1);
         };
     }
 }

@@ -4,6 +4,13 @@
 #include <gtest/gtest.h>
 #include <objects.h>
 
+TEST(Util, CharSequence){
+    const char *c_str = "1234";
+    dit::utils::CharSequence sequence(c_str);
+    EXPECT_TRUE(sequence.length() == 4);
+    EXPECT_TRUE(sequence.capacity() == 8);
+}
+
 TEST(Object, Blob) {
     std::string content("hello\ndit\nfirst test of blob");
     dit::objects::BlobObject *blob_object_write = new dit::objects::BlobObject(content);
@@ -11,5 +18,5 @@ TEST(Object, Blob) {
 
     dit::objects::BlobObject *blob_object_read = new dit::objects::BlobObject();
     blob_object_read->read(sha1);
-    EXPECT_EQ(content, blob_object_read->content());
+    EXPECT_TRUE(blob_object_read->content() ==  content);
 }

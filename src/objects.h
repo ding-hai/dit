@@ -23,33 +23,33 @@ namespace dit {
         protected:
             ObjectType type_;
             size_t size_;
-            std::string content_;
+            utils::CharSequence content_;
             fs::ObjectWriter object_writer_;
             fs::ObjectReader object_reader_;
         public:
             Object() = default;
 
-            Object(ObjectType type, const std::string &content) : type_(type), size_(content.length()),
+            Object(ObjectType type, const utils::CharSequence &content) : type_(type), size_(content.length()),
                                                                   content_(content) {}
 
             ObjectType type() { return type_; }
 
             size_t size() { return size_; }
 
-            std::string &content() { return content_; }
+            utils::CharSequence &content() { return content_; }
 
-            virtual Object *from_string(const std::string &file_content) = 0;
+            virtual Object *from_char_sequence(const utils::CharSequence &file_content) = 0;
 
-            virtual std::string to_string() = 0;
+            virtual utils::CharSequence to_char_sequence() = 0;
 
             std::string write() {
-                auto content = to_string();
+                auto content = to_char_sequence();
                 return object_writer_.write(content);
             }
 
             Object* read(std::string &sha1) {
                 auto file_content = object_reader_.read(sha1);
-                this->from_string(file_content);
+                this->from_char_sequence(file_content);
                 return this;
             }
 
@@ -60,20 +60,21 @@ namespace dit {
         public:
             BlobObject() = default;
 
-            BlobObject(const std::string &content) : Object(BLOB, content) {}
+            BlobObject(const utils::CharSequence &content) : Object(BLOB, content) {}
 
-            Object *from_string(const std::string &file_content) override;
+            Object *from_char_sequence(const utils::CharSequence &file_content) override;
 
-            std::string to_string() override;
+            utils::CharSequence to_char_sequence() override;
         };
 
         class TreeObject : public Object {
-            Object *from_string(const std::string &file_content) override;
+            Object *from_char_sequence(const utils::CharSequence &file_content) override;
+            utils::CharSequence to_char_sequence() override;
         };
 
         class CommitObject : public Object {
-
-            Object *from_string(const std::string &file_content) override;
+            Object *from_char_sequence(const utils::CharSequence &file_content) override;
+            utils::CharSequence to_char_sequence() override;
         };
     }
 }

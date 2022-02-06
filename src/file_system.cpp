@@ -9,17 +9,17 @@ namespace dit {
         const boost::filesystem::path REPOSITORY_ROOT("./.dit/");
         const boost::filesystem::path OBJECTS("objects");
 
-        std::string ObjectWriter::write(const std::string &content) {
+        std::string ObjectWriter::write(const utils::CharSequence &content) {
             auto sha1 = utils::sha1digit(content);
             auto path = generate_path(sha1);
             boost::filesystem::create_directories(path.parent_path());
             gzFile gz_file = gzopen(path.string().c_str(), "wb");
-            gzwrite(gz_file, content.c_str(), content.length());
+            gzwrite(gz_file, content.data(), content.length());
             gzclose(gz_file);
             return sha1;
         }
 
-        std::string ObjectReader::read(const std::string &sha1) {
+        utils::CharSequence ObjectReader::read(const std::string &sha1) {
             auto path = generate_path(sha1);
             gzFile gz_file = gzopen(path.string().c_str(), "rb");
             std::string file_content;
