@@ -15,7 +15,8 @@ namespace dit {
 
         class ObjectWriter {
         public:
-            virtual std::string write(const utils::CharSequence &content);
+            virtual std::string
+            write(const utils::CharSequence &content, boost::uuids::detail::sha1::digest_type &sha1);
         };
 
         class ObjectReader {

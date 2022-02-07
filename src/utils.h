@@ -15,7 +15,7 @@ namespace dit {
     namespace utils {
         class CharSequence {
         private:
-            char *data_;
+            uint8_t *data_;
             size_t length_;
             size_t capacity_;
         public:
@@ -26,7 +26,7 @@ namespace dit {
         public:
             CharSequence();
 
-            CharSequence(const char *data, size_t offset, size_t length);
+            CharSequence(const uint8_t *data, size_t offset, size_t length);
 
             CharSequence(const std::string &str);
 
@@ -38,7 +38,9 @@ namespace dit {
 
             ~CharSequence();
 
-            CharSequence operator=(const CharSequence &other);
+            void clear();
+
+            CharSequence &operator=(const CharSequence &other);
 
             bool operator==(const CharSequence &other);
 
@@ -52,7 +54,7 @@ namespace dit {
 
             bool operator!=(const char *c_str);
 
-            const char *data() const { return data_; }
+            const uint8_t *data() const { return data_; }
 
             size_t length() const { return length_; }
 
@@ -60,7 +62,7 @@ namespace dit {
 
             size_t capacity() { return capacity_; }
 
-            void append(const char *data, size_t offset, size_t length);
+            void append(const uint8_t *data, size_t offset, size_t length);
 
             CharSequence &append(size_t val);
 
@@ -75,9 +77,19 @@ namespace dit {
 
             size_t find(char c) const;
 
-            CharSequence &&sub_sequence(size_t l, size_t right = size_t(-1)) const;
+            CharSequence sub_sequence(size_t l, size_t right = size_t(-1)) const;
 
         };
+
+        bool
+        sha1digit_to_char_seq(CharSequence &sequence, const boost::uuids::detail::sha1::digest_type &sha1_digit_value);
+
+        bool
+        char_seq_to_sha1digit(const CharSequence &sequence, boost::uuids::detail::sha1::digest_type &sha1_digit_value);
+
+        void sha1digit(const CharSequence &char_seq, boost::uuids::detail::sha1::digest_type &sha1_digit_value);
+
+        std::string sha1digit_to_string(boost::uuids::detail::sha1::digest_type &sha1_digit_value);
 
         std::string sha1digit(const CharSequence &char_seq);
 
