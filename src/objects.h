@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <string>
+#include <algorithm>
 #include <map>
 #include "utils.h"
 #include "file_system.h"
@@ -22,13 +23,15 @@ namespace dit {
             COMMIT = 3
         };
 
-        static const char *ObjectTypes[]{"UNDEFINED", "blob", "tree", "commit"};
+        std::string &object_type_to_string(ObjectType type) ;
+
+        ObjectType string_to_object_type(std::string s);
 
         class Object {
         protected:
             ObjectType type_ = BLOB;
             size_t size_ = 0;
-            utils::CharSequence content_;
+            std::string content_;
             fs::ObjectWriter object_writer_;
             fs::ObjectReader object_reader_;
         public:
@@ -36,23 +39,23 @@ namespace dit {
 
             Object(ObjectType object_type) : type_(object_type) {}
 
-            Object(ObjectType type, const utils::CharSequence &content) : type_(type), content_(content) {}
+            Object(ObjectType type, const std::string &content) : type_(type), content_(content) {}
 
             ObjectType type() { return type_; }
 
-            utils::CharSequence &content() { return content_; }
+            std::string &content() { return content_; }
 
-            virtual Object *from_char_sequence(const utils::CharSequence &file_content) {
-                auto index = file_content.find('\0');
-                if (index == utils::CharSequence::npos)
+            virtual Object *from_string(const std::string &file_content) {
+                auto index = file_content.find('\n');
+                if (index == std::string::npos)
                     throw dit::exceptions::MalformedException("file is malformed");
-                auto header = file_content.sub_sequence(0, index);
-                this->content_ = file_content.sub_sequence(index + 1);
+                auto header = file_content.substr(0, index);
+                this->content_ = file_content.substr(index + 1);
                 index = header.find(' ');
-                if (index == utils::CharSequence::npos)
+                if (index == std::string::npos)
                     throw dit::exceptions::MalformedException("file is malformed");
-                auto type = header.sub_sequence(0, index);
-                auto length = header.sub_sequence(index + 1);
+                auto type = header.substr(0, index);
+                auto length = header.substr(index + 1);
                 if (type != "tree" && type != "blob" && type != "commit")
                     throw dit::exceptions::MalformedException("file is malformed");
                 if (std::stoi((char *) length.data()) != this->content_.length())
@@ -60,31 +63,21 @@ namespace dit {
                 return this;
             };
 
-            virtual utils::CharSequence to_char_sequence() {
-                auto type = ObjectTypes[this->type_];
-                utils::CharSequence sequence;
-                sequence.append(type)
-                        .append(' ')
-                        .append(this->content_.length())
-                        .append('\0')
-                        .append(this->content_);
-                return std::move(sequence);
+            virtual std::string to_string() {
+                auto type = object_type_to_string(this->type_);
+                std::ostringstream oss;
+                oss << type << ' ' << this->content_.length() << '\n' << this->content_;
+                return std::move(oss.str());
             };
 
             virtual std::string write() {
-                auto content = to_char_sequence();
-                boost::uuids::detail::sha1::digest_type sha1;
-                return object_writer_.write(content, sha1);
-            }
-
-            virtual std::string write_with_raw_sha1(boost::uuids::detail::sha1::digest_type &sha1) {
-                auto content = to_char_sequence();
-                return object_writer_.write(content, sha1);
+                auto content = to_string();
+                return object_writer_.write(content);
             }
 
             virtual Object *read(const std::string &sha1) {
                 auto file_content = object_reader_.read(sha1);
-                this->from_char_sequence(file_content);
+                this->from_string(file_content);
                 return this;
             }
         };
@@ -93,23 +86,22 @@ namespace dit {
         public:
             BlobObject() = default;
 
-            BlobObject(const utils::CharSequence &content) : Object(BLOB, content) {}
+            BlobObject(const std::string &content) : Object(BLOB, content) {}
 
-            Object *from_char_sequence(const utils::CharSequence &file_content) override;
+            Object *from_string(const std::string &file_content) override;
 
-            utils::CharSequence to_char_sequence() override;
+            std::string to_string() override;
         };
 
 
         class TreeObject : public Object {
             struct Item {
-                Item(int mode, ObjectType type, const std::string &file_path,
-                     boost::uuids::detail::sha1::digest_type &sha1);
+                Item(int mode, ObjectType type, const std::string &file_path, const std::string &sha1);
 
                 int mode;
                 ObjectType type = ObjectType::UNDEFINED;
                 std::string file_path;
-                boost::uuids::detail::sha1::digest_type sha1;
+                std::string sha1;
             };
 
         public:
@@ -118,12 +110,12 @@ namespace dit {
         public:
             TreeObject() : Object(TREE) {};
 
-            Object *from_char_sequence(const utils::CharSequence &file_content) override;
+            Object *from_string(const std::string &file_content) override;
 
-            utils::CharSequence to_char_sequence() override;
+            std::string to_string() override;
 
             void
-            add(int mode, ObjectType type, const std::string &file_path, boost::uuids::detail::sha1::digest_type &sha1);
+            add(int mode, ObjectType type, const std::string &file_path,const  std::string &sha1);
 
             void expand() {
                 for (auto &item: items) {
@@ -132,7 +124,7 @@ namespace dit {
                         object = new TreeObject();
                     else
                         object = new BlobObject();
-                    object->read(utils::sha1digit_to_string(item.sha1));
+                    object->read(item.sha1);
                     if (item.type == TREE)
                         dynamic_cast<TreeObject *>(object)->expand();
 
@@ -165,9 +157,9 @@ namespace dit {
         public:
             CommitObject() : Object(COMMIT) {};
 
-            Object *from_char_sequence(const utils::CharSequence &file_content) override;
+            Object *from_string(const std::string &file_content) override;
 
-            utils::CharSequence to_char_sequence() override;
+            std::string to_string() override;
 
             void add_parent(const std::string &parent_sha1);
 

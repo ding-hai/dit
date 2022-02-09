@@ -7,136 +7,122 @@
 
 namespace dit {
     namespace objects {
-        Object *BlobObject::from_char_sequence(const utils::CharSequence &file_content) {
-            Object::from_char_sequence(file_content);
+        std::string &object_type_to_string(ObjectType type) {
+            static std::string map_from_type_to_string[]{"UNDEFINED", "blob", "tree", "commit"};
+            return map_from_type_to_string[type];
+        }
+
+        ObjectType string_to_object_type(std::string s) {
+            std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (s == "blob")
+                return BLOB;
+            if (s == "tree")
+                return TREE;
+            if (s == "commit")
+                return COMMIT;
+            return UNDEFINED;
+        }
+
+
+        Object *BlobObject::from_string(const std::string &file_content) {
+            Object::from_string(file_content);
             this->type_ = ObjectType::BLOB;
             return this;
         }
 
-        utils::CharSequence BlobObject::to_char_sequence() {
-            return Object::to_char_sequence();
+        std::string BlobObject::to_string() {
+            return Object::to_string();
         }
 
-        Object *TreeObject::from_char_sequence(const utils::CharSequence &file_content) {
-            Object::from_char_sequence(file_content);
-            auto remain = this->content_;
-            while (remain.length() > 0) {
-                auto index = remain.find('\0');
-                if (index + 20 > remain.length())
-                    break;
-
-                auto line_header = remain.sub_sequence(0, index);
-                auto sha1_seq = remain.sub_sequence(index + 1, index + 21);
-                remain = remain.sub_sequence(index + 21);
-
-                boost::uuids::detail::sha1::digest_type sha1;
-                utils::char_seq_to_sha1digit(sha1_seq, sha1);
-
-                index = line_header.find(' ');
-                auto mode_sequence = line_header.sub_sequence(0, index);
-                int mode = std::stoi((char *) mode_sequence.data());
-
-                auto tmp_sequence = line_header.sub_sequence(index + 1);
-                index = tmp_sequence.find(' ');
-                auto type_sequence = tmp_sequence.sub_sequence(0, index);
-                auto type = type_sequence == "tree" ? TREE : BLOB;
-
-                auto file_path_sequence = tmp_sequence.sub_sequence(index + 1);
-                std::string file_path((char *) file_path_sequence.data());
-                items.emplace_back(mode, type, file_path, sha1);
+        Object *TreeObject::from_string(const std::string &file_content) {
+            Object::from_string(file_content);
+            items.clear();
+            std::vector<std::string> lines;
+            std::vector<std::string> line_items;
+            utils::split(lines, this->content_, '\n');
+            for (auto &line: lines) {
+                line_items.clear();
+                utils::split(line_items, line, ' ');
+                items.emplace_back(std::stoi(line_items[0]), string_to_object_type(line_items[1]), line_items[2],
+                                   line_items[3]);
             }
             this->type_ = TREE;
             return this;
         }
 
-        utils::CharSequence TreeObject::to_char_sequence() {
-            auto &body = this->content_;
-            body.clear();
-
+        std::string TreeObject::to_string() {
+            std::ostringstream oss;
             for (auto &item: items) {
-                utils::CharSequence sha1_seq;
-                utils::sha1digit_to_char_seq(sha1_seq, item.sha1);
-
-                body.append(size_t(item.mode))
-                        .append(' ')
-                        .append(item.type == TREE ? "tree" : "blob")
-                        .append(' ')
-                        .append(item.file_path)
-                        .append('\0')
-                        .append(sha1_seq);
+                oss << item.mode
+                    << ' '
+                    << object_type_to_string(item.type)
+                    << ' '
+                    << item.file_path
+                    << ' '
+                    << item.sha1
+                    << '\n';
             }
-
-            return Object::to_char_sequence();
+            this->content_ = oss.str();
+            return Object::to_string();
         }
 
         void TreeObject::add(int mode, ObjectType type, const std::string &file_path,
-                             boost::uuids::detail::sha1::digest_type &sha1) {
+                             const std::string &sha1) {
             this->items.emplace_back(mode, type, file_path, sha1);
         }
 
-        Object *CommitObject::from_char_sequence(const utils::CharSequence &file_content) {
-            Object::from_char_sequence(file_content);
-            auto &body = this->content_;
+        Object *CommitObject::from_string(const std::string &file_content) {
+            Object::from_string(file_content);
+            auto body = this->content_;
 
-            // the input string does include commit message
-            auto str = body.str();
-            auto limiter = str.find("\n\n");
-            commit_msg = str.substr(limiter + 2); // need to be trimmed
-            str = str.substr(0, limiter);
+            auto limiter = body.find("\n\n");
+            commit_msg = body.substr(limiter + 2); // need to be trimmed
+            body = body.substr(0, limiter);
 
             std::vector<std::string> lines;
-            utils::split(lines, str, '\n');
-            auto parse_user = [](std::string &remain, User &user) -> std::string {
-                std::vector<std::string> items;
-                utils::split(items, remain, ' ');
-                user.name_ = items[0];
-                user.email_ = items[1];
-                auto time = items[2];
-                return time;
-            };
+            utils::split(lines, body, '\n');
+
+            std::vector<std::string> line_items;
             for (auto &line: lines) {
-                auto index = line.find(' ');
-                auto line_type = line.substr(0, index);
-                auto remain = line.substr(index + 1);
+                line_items.clear();
+                utils::split(line_items, line, ' ');
+                auto line_type = line_items[0];
                 if (line_type == "tree") {
-                    root_tree_sha1 = remain;
+                    root_tree_sha1 = line_items[1];
                 } else if (line_type == "parent") {
-                    parents.push_back(remain);
+                    parents.push_back(line_items[1]);
                 } else if (line_type == "author") {
-                    timestamp = parse_user(remain, author);
+                    author.name_ = line_items[1];
+                    author.email_ = line_items[2];
+                    timestamp = line_items[3];
                 } else if (line_type == "commit") {
-                    timestamp = parse_user(remain, committer);
+                    committer.name_ = line_items[1];
+                    committer.email_ = line_items[2];
+                    timestamp = line_items[3];
                 }
             }
 
             return this;
         }
 
-        utils::CharSequence CommitObject::to_char_sequence() {
-            auto &body = this->content_;
-            body.clear();
+        std::string CommitObject::to_string() {
+            std::ostringstream oss;
 
             // add tree
-            body.append("tree ").append(root_tree_sha1).append('\n');
+            oss << "tree " << root_tree_sha1 << '\n';
 
             // add parents
             for (auto &parent_commit: parents) {
-                body.append("parent ").append(parent_commit).append('\n');
+                oss << "parent " << parent_commit << '\n';
             }
 
-            auto append_user = [&body](const char *type, const User &user, const std::string time) {
-                body.append(type).append(' ')
-                        .append(user.name_).append(' ')
-                        .append(user.email_).append(' ')
-                        .append(time).append('\n');
-            };
             // add author and committer
-            append_user("author", author, timestamp);
-            append_user("committer", committer, timestamp);
-            body.append('\n').append(commit_msg);
+            oss << "author " << author.name_ << ' ' << author.email_ << ' ' << timestamp << '\n';
+            oss << "committer " << committer.name_ << ' ' << committer.email_ << ' ' << timestamp << '\n';
+            oss << '\n' << commit_msg;
 
-
-            return Object::to_char_sequence();
+            this->content_ = oss.str();
+            return Object::to_string();
         }
 
         const std::vector<std::string> &CommitObject::get_parents() const {
@@ -188,12 +174,11 @@ namespace dit {
         }
 
         TreeObject::Item::Item(int mode, ObjectType type, const std::string &file_path,
-                               boost::uuids::detail::sha1::digest_type &sha1) {
+                               const std::string &sha1) {
             this->mode = mode;
             this->type = type;
             this->file_path = file_path;
-            for (int i = 0; i < 5; i++)
-                this->sha1[i] = sha1[i];
+            this->sha1 = sha1;
         }
     }
 }

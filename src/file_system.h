@@ -16,12 +16,12 @@ namespace dit {
         class ObjectWriter {
         public:
             virtual std::string
-            write(const utils::CharSequence &content, boost::uuids::detail::sha1::digest_type &sha1);
+            write(const std::string &content);
         };
 
         class ObjectReader {
         public:
-            utils::CharSequence read(const std::string &sha1);
+            std::string read(const std::string &sha1);
         };
     }
 }
