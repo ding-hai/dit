@@ -30,10 +30,11 @@ namespace dit {
         class Object {
         protected:
             ObjectType type_ = BLOB;
-            size_t size_ = 0;
             std::string content_;
             fs::ObjectWriter object_writer_;
             fs::ObjectReader object_reader_;
+        public:
+            std::string sha1;
         public:
             Object() = default;
 
@@ -70,14 +71,16 @@ namespace dit {
                 return std::move(oss.str());
             };
 
-            virtual std::string write() {
+            virtual const std::string& write() {
                 auto content = to_string();
-                return object_writer_.write(content);
+                sha1 = object_writer_.write(content);
+                return sha1;
             }
 
             virtual Object *read(const std::string &sha1) {
                 auto file_content = object_reader_.read(sha1);
                 this->from_string(file_content);
+                this->sha1 = sha1;
                 return this;
             }
         };
@@ -109,6 +112,12 @@ namespace dit {
             std::map<std::string, Object *> index;
         public:
             TreeObject() : Object(TREE) {};
+            ~TreeObject() {
+                for(auto &pair : index){
+                    auto *p = pair.second;
+                    delete p;
+                }
+            };
 
             Object *from_string(const std::string &file_content) override;
 
