@@ -159,3 +159,55 @@ TEST(Object, TreeExpand) {
 }
 
 
+TEST(Object, Commit) {
+    dit::objects::TreeObject tree_object_write;
+    std::string base_file_path("file_");
+    boost::uuids::detail::sha1::digest_type sha1;
+    for (int i = 0; i < 100; i++) {
+        dit::objects::BlobObject blob(dit::utils::CharSequence("hello world ").append(size_t(i)));
+        auto sha1_str = blob.write_with_raw_sha1(sha1);
+        tree_object_write.add(100644, dit::objects::BLOB, base_file_path + std::to_string(i), sha1);
+    }
+
+    auto tree_sha1_str = tree_object_write.write();
+    dit::objects::CommitObject commit_object_write;
+    auto name = "ding-hai";
+    auto email = "dhairoot@gmail.com";
+    dit::objects::CommitObject::User author(name, email);
+    dit::objects::CommitObject::User committer(name, email);
+    auto commit_msg = "hello commit";
+    auto time = std::time(nullptr);
+    auto timestamp_str = std::to_string(time);
+    auto parent_sha1 = "0000000000000000000000000000000000000000";
+    commit_object_write.add_parent(parent_sha1);
+    commit_object_write.set_author(author);
+    commit_object_write.set_committer(committer);
+    commit_object_write.set_commit_msg(commit_msg);
+    commit_object_write.set_timestamp(timestamp_str);
+    commit_object_write.set_root_tree(tree_sha1_str);
+    auto commit_sha1 = commit_object_write.write();
+
+    dit::objects::CommitObject commit_object_read;
+    commit_object_read.read(commit_sha1);
+    auto &root_tree_sha1_read = commit_object_read.get_root_tree();
+    EXPECT_EQ(root_tree_sha1_read, tree_sha1_str);
+    auto &parents = commit_object_read.get_parents();
+    EXPECT_EQ(parents.size(), 1);
+    EXPECT_TRUE(parents[0] == parent_sha1);
+
+    auto timestamp_read = commit_object_read.get_timestamp();
+    EXPECT_EQ(timestamp_read, timestamp_str);
+    auto author_read = commit_object_read.get_author();
+    auto committer_read = commit_object_write.get_committer();
+    EXPECT_EQ(author_read.name_, author.name_);
+    EXPECT_EQ(author_read.email_, author.email_);
+    EXPECT_EQ(committer_read.name_, committer.name_);
+    EXPECT_EQ(committer_read.email_, committer_read.email_);
+
+    auto commit_msg_read = commit_object_read.get_commit_msg();
+    auto commit_msg_str = std::string(commit_msg);
+    EXPECT_EQ(commit_msg_read, commit_msg_str);
+
+}
+
+

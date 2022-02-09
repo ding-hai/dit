@@ -77,6 +77,12 @@ namespace dit {
 
             size_t find(char c) const;
 
+            std::string str(size_t l = 0, size_t r = size_t(-1)) {
+                r = std::min(r, length_);
+                std::string str((char *) data_ + l, r - l);
+                return std::move(str);
+            }
+
             CharSequence sub_sequence(size_t l, size_t right = size_t(-1)) const;
 
         };

@@ -8,51 +8,20 @@
 namespace dit {
     namespace objects {
         Object *BlobObject::from_char_sequence(const utils::CharSequence &file_content) {
-            auto index = file_content.find('\0');
-            if (index == utils::CharSequence::npos)
-                throw dit::exceptions::MalformedException("blob file is malformed");
-            auto header = file_content.sub_sequence(0, index);
-            this->content_ = file_content.sub_sequence(index + 1);
-            index = header.find(' ');
-            auto type = header.sub_sequence(0, index);
-            auto length = header.sub_sequence(index + 1);
-            if (type != "blob")
-                throw dit::exceptions::MalformedException("type doesn't matched");
-            if (std::stoi((char *) length.data()) != this->content_.length())
-                throw dit::exceptions::MalformedException("length doesn't matched");
-            this->size_ = this->content_.length();
+            Object::from_char_sequence(file_content);
             this->type_ = ObjectType::BLOB;
             return this;
         }
 
         utils::CharSequence BlobObject::to_char_sequence() {
-            utils::CharSequence sequence;
-            sequence.append("blob ")
-                    .append(this->size_)
-                    .append('\0')
-                    .append(this->content_);
-            return std::move(sequence);
+            return Object::to_char_sequence();
         }
 
         Object *TreeObject::from_char_sequence(const utils::CharSequence &file_content) {
-            auto index = file_content.find('\0');
-            if (index == utils::CharSequence::npos)
-                throw dit::exceptions::MalformedException("blob file is malformed");
-            auto header = file_content.sub_sequence(0, index);
-            this->content_ = file_content.sub_sequence(index + 1);
-            index = header.find(' ');
-            if (index == utils::CharSequence::npos)
-                throw dit::exceptions::MalformedException("blob file is malformed");
-            auto type = header.sub_sequence(0, index);
-            auto length = header.sub_sequence(index + 1);
-            if (type != "tree")
-                throw dit::exceptions::MalformedException("type doesn't matched");
-            if (std::stoi((char *) length.data()) != this->content_.length())
-                throw dit::exceptions::MalformedException("length doesn't matched");
-
+            Object::from_char_sequence(file_content);
             auto remain = this->content_;
             while (remain.length() > 0) {
-                index = remain.find('\0');
+                auto index = remain.find('\0');
                 if (index + 20 > remain.length())
                     break;
 
@@ -77,13 +46,12 @@ namespace dit {
                 items.emplace_back(mode, type, file_path, sha1);
             }
             this->type_ = TREE;
-            this->size_ = this->content_.length();
             return this;
         }
 
         utils::CharSequence TreeObject::to_char_sequence() {
-            utils::CharSequence sequence;
-            utils::CharSequence body;
+            auto &body = this->content_;
+            body.clear();
 
             for (auto &item: items) {
                 utils::CharSequence sha1_seq;
@@ -98,11 +66,7 @@ namespace dit {
                         .append(sha1_seq);
             }
 
-            sequence.append("tree ")
-                    .append(body.length())
-                    .append('\0')
-                    .append(body);
-            return sequence;
+            return Object::to_char_sequence();
         }
 
         void TreeObject::add(int mode, ObjectType type, const std::string &file_path,
@@ -111,12 +75,116 @@ namespace dit {
         }
 
         Object *CommitObject::from_char_sequence(const utils::CharSequence &file_content) {
+            Object::from_char_sequence(file_content);
+            auto &body = this->content_;
+
+            // the input string does include commit message
+            auto str = body.str();
+            auto limiter = str.find("\n\n");
+            commit_msg = str.substr(limiter + 2); // need to be trimmed
+            str = str.substr(0, limiter);
+
+            std::vector<std::string> lines;
+            utils::split(lines, str, '\n');
+            auto parse_user = [](std::string &remain, User &user) -> std::string {
+                std::vector<std::string> items;
+                utils::split(items, remain, ' ');
+                user.name_ = items[0];
+                user.email_ = items[1];
+                auto time = items[2];
+                return time;
+            };
+            for (auto &line: lines) {
+                auto index = line.find(' ');
+                auto line_type = line.substr(0, index);
+                auto remain = line.substr(index + 1);
+                if (line_type == "tree") {
+                    root_tree_sha1 = remain;
+                } else if (line_type == "parent") {
+                    parents.push_back(remain);
+                } else if (line_type == "author") {
+                    timestamp = parse_user(remain, author);
+                } else if (line_type == "commit") {
+                    timestamp = parse_user(remain, committer);
+                }
+            }
+
             return this;
         }
 
         utils::CharSequence CommitObject::to_char_sequence() {
-            utils::CharSequence sequence;
-            return sequence;
+            auto &body = this->content_;
+            body.clear();
+
+            // add tree
+            body.append("tree ").append(root_tree_sha1).append('\n');
+
+            // add parents
+            for (auto &parent_commit: parents) {
+                body.append("parent ").append(parent_commit).append('\n');
+            }
+
+            auto append_user = [&body](const char *type, const User &user, const std::string time) {
+                body.append(type).append(' ')
+                        .append(user.name_).append(' ')
+                        .append(user.email_).append(' ')
+                        .append(time).append('\n');
+            };
+            // add author and committer
+            append_user("author", author, timestamp);
+            append_user("committer", committer, timestamp);
+            body.append('\n').append(commit_msg);
+
+
+            return Object::to_char_sequence();
+        }
+
+        const std::vector<std::string> &CommitObject::get_parents() const {
+            return parents;
+        }
+
+        void CommitObject::add_parent(const std::string &parent_sha1) {
+            parents.push_back(parent_sha1);
+        }
+
+        const std::string &CommitObject::get_root_tree() const {
+            return root_tree_sha1;
+        }
+
+        void CommitObject::set_root_tree(const std::string &tree_sha1) {
+            root_tree_sha1 = tree_sha1;
+        }
+
+        const CommitObject::User &CommitObject::get_author() const {
+            return author;
+        }
+
+        void CommitObject::set_author(const CommitObject::User &author) {
+            CommitObject::author = author;
+        }
+
+        const CommitObject::User &CommitObject::get_committer() const {
+            return committer;
+        }
+
+        void CommitObject::set_committer(const CommitObject::User &committer) {
+            CommitObject::committer = committer;
+        }
+
+        const std::string &CommitObject::get_timestamp() const {
+            return timestamp;
+        }
+
+        void CommitObject::set_timestamp(const std::string &timestamp) {
+            CommitObject::timestamp = timestamp;
+        }
+
+        const std::string &CommitObject::get_commit_msg() const {
+            return commit_msg;
+        }
+
+        void CommitObject::set_commit_msg(const std::string &commit_msg) {
+            CommitObject::commit_msg = commit_msg;
         }
 
         TreeObject::Item::Item(int mode, ObjectType type, const std::string &file_path,
