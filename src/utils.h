@@ -11,6 +11,15 @@
 #include <boost/uuid/detail/sha1.hpp>
 #include <boost/filesystem.hpp>
 
+namespace std {
+    template<>
+    struct hash<boost::filesystem::path> {
+        size_t operator()(const boost::filesystem::path &path) const {
+            return boost::filesystem::hash_value(path);
+        }
+    };
+}
+
 namespace dit {
     namespace utils {
 
