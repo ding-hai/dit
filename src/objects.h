@@ -157,6 +157,8 @@ namespace dit {
             Object *from_string(const std::string &file_content) override;
 
             std::string to_string() override;
+            void log(std::ostringstream &oss);
+
 
             void add_parent(const std::string &parent_sha1);
 

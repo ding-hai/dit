@@ -231,4 +231,6 @@ TEST(CMD, cmd_commit){
     std::vector<std::string> args_of_cmd_commit3{"--m", "hello 3rd commit"};
     dit::cmd::cmd_add(args_of_cmd_add3);
     dit::cmd::cmd_commit(args_of_cmd_commit3);
+
+    dit::cmd::cmd_log();
 }

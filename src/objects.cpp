@@ -141,6 +141,19 @@ namespace dit {
             return Object::to_string();
         }
 
+        void CommitObject::log(std::ostringstream &oss) {
+            std::time_t time;
+            std::istringstream iss(timestamp);
+            iss >> time;
+
+            oss << "commit\t"<<sha1 << '\n'
+                << "Author:\t" << author.name_ <<" <"<< author.email_ << ">\n"
+                << "Date:\t" << std::asctime(std::localtime(&time))
+                << '\n'
+                << '\t' << commit_msg
+                << "\n\n";
+        }
+
         const std::vector<std::string> &CommitObject::get_parents() const {
             return parents;
         }
