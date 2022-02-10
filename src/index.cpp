@@ -42,12 +42,41 @@ namespace dit {
             index_.clear();
         }
 
+        std::string Index::to_tree_object() {
+            boost_fs::path root_path("");
+            std::unordered_map<boost_fs::path, objects::TreeObject> path_to_tree_map;
+            std::unordered_map<boost_fs::path, std::set<boost_fs::path>> relationships;
+            for (auto &pair: index_) {
+                auto &&parent_dir = pair.first.parent_path();
+                auto &&file_name = parent_dir.empty() ? pair.first : boost_fs::relative(pair.first, parent_dir);
+                path_to_tree_map[parent_dir].add(100644, objects::BLOB, file_name.generic_string(), pair.second);
+                while (!parent_dir.empty()) {
+                    relationships[parent_dir.parent_path()].insert(parent_dir);
+                    parent_dir = parent_dir.parent_path();
+                }
+            }
+
+            std::function<const std::string&(const boost_fs::path& )> save_tree;
+            save_tree = [&](const boost_fs::path& path) -> const std::string&{
+                auto &tree = path_to_tree_map[path];
+                for(auto &sub_path: relationships[path]){
+                    auto sha1 = save_tree(sub_path);
+                    tree.add(400000, objects::TREE, sub_path.generic_string(), sha1);
+                }
+                return tree.write();
+            };
+
+            auto sha1 = save_tree(root_path);
+
+            return sha1;
+        }
+
         Index *Index::instance_ = nullptr;
 
-        Index::Index():index_path_( dit::fs::REPOSITORY_ROOT / dit::fs::REPOSITORY_INTERNAL_PATH/dit::fs::INDEX) {
+        Index::Index() : index_path_(dit::fs::REPOSITORY_ROOT / dit::fs::REPOSITORY_INTERNAL_PATH / dit::fs::INDEX) {
             std::string file_content;
             auto success = dit::fs::file_read(index_path_, file_content);
-            if(!success) return;
+            if (!success) return;
 
             std::istringstream iss(file_content);
             int n = 0;

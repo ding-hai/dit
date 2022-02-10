@@ -190,3 +190,22 @@ TEST(CMD, cmd_add) {
     dit::cmd::cmd_add(args);
 }
 
+TEST(Index, to_tree_object){
+    dit::cmd::cmd_init("");
+    dit::fs::configure_repository_root();
+    std::vector<std::string> args{"*"};
+    dit::cmd::cmd_add(args);
+    auto &index = dit::index::Index::instance();
+    auto root_tree_sha1 = index.to_tree_object();
+    dit::objects::CommitObject commit;
+    commit.set_root_tree(root_tree_sha1);
+    dit::objects::CommitObject::User author("dinghai", "dhairoot@126.com");
+    dit::objects::CommitObject::User committer("dinghai", "dhairoot@126.com");
+    commit.set_committer(committer);
+    commit.set_author(author);
+    commit.set_timestamp(std::to_string(std::time(nullptr)));
+    commit.set_commit_msg("hello first commit");
+    auto commit_sha1 = commit.write();
+    std::cout<<commit_sha1<<std::endl;
+}
+

@@ -6,6 +6,7 @@
 #define DIT_INDEX_H
 
 #include <unordered_map>
+#include <set>
 #include <boost/filesystem.hpp>
 #include <boost/functional/hash.hpp>
 #include "objects.h"
@@ -53,6 +54,8 @@ namespace dit {
             }
 
             void save();
+
+            std::string to_tree_object();
         };
 
         class WorkingIndex : public IndexBase {

@@ -13,7 +13,6 @@
 #include "utils.h"
 #include "file_system.h"
 #include "exceptions.h"
-#include "index.h"
 
 namespace dit {
     namespace objects {
