@@ -6,8 +6,11 @@
 #define DIT_FILE_SYSTEM_H
 
 #include <boost/filesystem/path.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <zlib.h>
+#include <fstream>
 #include "utils.h"
 #include "exceptions.h"
 

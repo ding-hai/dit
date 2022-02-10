@@ -62,12 +62,12 @@ namespace dit {
         }
 
         bool file_read(const boost::filesystem::path &file_path, std::string &read_result) {
-            if(!boost::filesystem::exists(file_path)) return false;
+            if (!boost::filesystem::exists(file_path)) return false;
             auto file_size = boost::filesystem::file_size(file_path);
             // 5M
             if (file_size > (5 << 20))
                 return false;
-            if(file_size == 0)
+            if (file_size == 0)
                 return false;
             char buffer[file_size];
             boost::filesystem::ifstream file(file_path, std::ios::in | std::ios::binary);
@@ -78,9 +78,10 @@ namespace dit {
         }
 
         bool file_write(const boost::filesystem::path &file_path, const std::string &write_content) {
-            boost::filesystem::ofstream file(file_path, std::ios::out);
+            std::fstream file(file_path.generic_string(), std::ios::out);
             file << write_content;
             file.flush();
+            file.sync();
             file.close();
             return true;
         }
@@ -90,12 +91,12 @@ namespace dit {
             boost_fs::recursive_directory_iterator iterator(dir);
             boost_fs::recursive_directory_iterator end;
             size_t num = 0;
-            for (;iterator != end; ++iterator) {
+            for (; iterator != end; ++iterator) {
                 boost_fs::path path(*iterator);
                 auto &&dit_path = REPOSITORY_ROOT / REPOSITORY_INTERNAL_PATH;
-                if(path.generic_string().find(dit_path.generic_string()) == 0)
+                if (path.generic_string().find(dit_path.generic_string()) == 0)
                     continue;
-                if(boost_fs::is_directory(path))
+                if (boost_fs::is_directory(path))
                     continue;
                 paths.push_back(path);
                 num++;
