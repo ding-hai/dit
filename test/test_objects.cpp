@@ -174,6 +174,7 @@ TEST(Object, Commit) {
 }
 
 TEST(CMD, add_one_file) {
+    boost::filesystem::remove_all(".dit");
     const char *file_path = "cmd.txt";
     std::string content;
     dit::fs::file_read(file_path, content);
@@ -183,7 +184,9 @@ TEST(CMD, add_one_file) {
     EXPECT_EQ(blob.content(), content);
 }
 
+// todo make it more automated
 TEST(CMD, cmd_add) {
+    boost::filesystem::remove_all(".dit");
     dit::cmd::cmd_init("");
     dit::fs::configure_repository_root();
     std::vector<std::string> args{"*"};
@@ -191,6 +194,7 @@ TEST(CMD, cmd_add) {
 }
 
 TEST(Index, to_tree_object){
+    boost::filesystem::remove_all(".dit");
     dit::cmd::cmd_init("");
     dit::fs::configure_repository_root();
     std::vector<std::string> args{"*"};
@@ -209,3 +213,22 @@ TEST(Index, to_tree_object){
     std::cout<<commit_sha1<<std::endl;
 }
 
+TEST(CMD, cmd_commit){
+    boost::filesystem::remove_all(".dit");
+    dit::cmd::cmd_init("");
+    dit::fs::configure_repository_root();
+    std::vector<std::string> args_of_cmd_add1{"cmd.txt"};
+    std::vector<std::string> args_of_cmd_commit1{"--m", "hello first commit"};
+    dit::cmd::cmd_add(args_of_cmd_add1);
+    dit::cmd::cmd_commit(args_of_cmd_commit1);
+
+    std::vector<std::string> args_of_cmd_add2{"src/1.txt"};
+    std::vector<std::string> args_of_cmd_commit2{"--m", "hello second commit"};
+    dit::cmd::cmd_add(args_of_cmd_add2);
+    dit::cmd::cmd_commit(args_of_cmd_commit2);
+
+    std::vector<std::string> args_of_cmd_add3{"src/sub/"};
+    std::vector<std::string> args_of_cmd_commit3{"--m", "hello 3rd commit"};
+    dit::cmd::cmd_add(args_of_cmd_add3);
+    dit::cmd::cmd_commit(args_of_cmd_commit3);
+}

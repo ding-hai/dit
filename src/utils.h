@@ -23,6 +23,11 @@ namespace std {
 namespace dit {
     namespace utils {
 
+
+        void left_trim(std::string &s);
+
+        void right_trim(std::string &s);
+
         std::string sha1digit_to_string(boost::uuids::detail::sha1::digest_type &sha1_digit_value);
 
         std::string sha1digit(const std::string &content);

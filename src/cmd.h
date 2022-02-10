@@ -11,12 +11,15 @@
 #include "objects.h"
 #include "exceptions.h"
 #include "index.h"
+#include "refs.h"
 namespace dit{
     namespace cmd{
         namespace boost_fs = boost::filesystem;
         void cmd_add(const std::vector<std::string> &args);
         const std::string &add_one_file(const boost::filesystem::path& file_path);
         bool cmd_init(const std::string &arg);
+        void cmd_commit(const std::vector<std::string> &args);
+        void cmd_log();
 
     }
 
