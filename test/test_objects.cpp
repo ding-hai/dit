@@ -5,46 +5,7 @@
 #include <objects.h>
 #include <unordered_map>
 #include <queue>
-
-TEST(Util, CharSequence) {
-    const char *c_str = "1234";
-    dit::utils::CharSequence sequence(c_str);
-    EXPECT_TRUE(sequence.length() == 4);
-    EXPECT_TRUE(sequence.capacity() == 8);
-
-    dit::utils::CharSequence sequence1 = sequence;
-    EXPECT_TRUE(sequence1 == sequence);
-
-    auto ptr = sequence1.data();
-    dit::utils::CharSequence sequence2 = std::move(sequence1);
-    EXPECT_TRUE(sequence1.data() == nullptr);
-    EXPECT_TRUE(sequence1.size() == 0);
-    EXPECT_TRUE(sequence1.capacity() == 0);
-    EXPECT_TRUE(sequence2.data() == ptr);
-
-    char buffer[] = {'1', '2', '3', '4', '\0', '5'};
-    sequence.append('\0');
-    sequence.append(size_t(5));
-    EXPECT_TRUE(sequence.length() == sizeof buffer);
-    for (int i = 0; i < sequence.length(); i++) {
-        EXPECT_TRUE(buffer[i] == sequence.data()[i]);
-    }
-}
-
-TEST(SHA1, sha1digit_to_char_seq) {
-    dit::utils::CharSequence input("hello world");
-    dit::utils::CharSequence output;
-    boost::uuids::detail::sha1::digest_type sha1;
-    dit::utils::sha1digit(input, sha1);
-    dit::utils::sha1digit_to_char_seq(output, sha1);
-    const uint8_t *data = output.data();
-    uint8_t expected[20]{0x2a, 0xae, 0x6c, 0x35, 0xc9, 0x4f, 0xcf, 0xb4, 0x15, 0xdb, 0xe9, 0x5f, 0x40, 0x8b, 0x9c, 0xe9,
-                         0x1e, 0xe8, 0x46, 0xed};
-    EXPECT_EQ(output.length(), 20);
-    for (int i = 0; i < output.length(); ++i) {
-        EXPECT_TRUE(data[i] == expected[i]);
-    }
-}
+#include <cmd.h>
 
 TEST(Object, Blob) {
     std::string content("hello\ndit\nfirst test of blob");
@@ -67,9 +28,8 @@ TEST(Object, TreeReadAndWrite) {
         auto str = std::to_string(i);
         auto file_path = base_file_path + str;
         auto file_content = base_file_content + str;
-        boost::uuids::detail::sha1::digest_type sha1;
-        dit::utils::sha1digit(file_content, sha1);
-        file_to_sha1_map.emplace(file_path, dit::utils::sha1digit_to_string(sha1));
+        auto sha1 = dit::utils::sha1digit(file_content);
+        file_to_sha1_map.emplace(file_path, sha1);
         tree_object_write.add(100644, dit::objects::BLOB, file_path, sha1);
     }
 
@@ -77,7 +37,7 @@ TEST(Object, TreeReadAndWrite) {
     tree_object_read.read(sha1_str);
     EXPECT_TRUE(file_to_sha1_map.size() == tree_object_read.items.size());
     for (auto &item: tree_object_read.items) {
-        EXPECT_TRUE(file_to_sha1_map[item.file_path] == dit::utils::sha1digit_to_string(item.sha1));
+        EXPECT_TRUE(file_to_sha1_map[item.file_path] == item.sha1);
     }
 }
 
@@ -88,13 +48,12 @@ TEST(Object, TreeExpand) {
     dit::objects::TreeObject sub_sub_tree;
     std::string base_file_path("file_");
     std::string base_folder("folder/");
-    boost::uuids::detail::sha1::digest_type sha1;
     typedef std::pair<std::string, dit::objects::ObjectType> Sha1AndTypePair;
     std::unordered_map<std::string, Sha1AndTypePair> file_to_sha1_map;
     for (int i = 0; i < 100; i++) {
-        dit::objects::BlobObject blob(dit::utils::CharSequence("hello world ").append(size_t(i)));
+        dit::objects::BlobObject blob(std::string("hello world ").append(std::to_string(i)));
         std::string file_path;
-        auto sha1_str = blob.write_with_raw_sha1(sha1);
+        auto sha1 = blob.write();
         if (i % 2 == 0) {
             file_path = base_file_path + std::to_string(i);
             tree_object_write.add(100644, dit::objects::BLOB, file_path, sha1);
@@ -105,13 +64,13 @@ TEST(Object, TreeExpand) {
             file_path = base_folder + base_folder + std::to_string(i);
             sub_sub_tree.add(100644, dit::objects::BLOB, file_path, sha1);
         }
-        file_to_sha1_map.emplace(file_path, Sha1AndTypePair(sha1_str, dit::objects::BLOB));
+        file_to_sha1_map.emplace(file_path, Sha1AndTypePair(sha1, dit::objects::BLOB));
     }
 
-    auto sub_sub_tree_sha1_str = sub_sub_tree.write_with_raw_sha1(sha1);
-    sub_tree.add(400000, dit::objects::TREE, base_folder + base_folder, sha1);
-    auto sub_tree_sha1_str = sub_tree.write_with_raw_sha1(sha1);
-    tree_object_write.add(400000, dit::objects::TREE, base_folder, sha1);
+    auto sub_sub_tree_sha1_str = sub_sub_tree.write();
+    sub_tree.add(400000, dit::objects::TREE, base_folder + base_folder, sub_sub_tree_sha1_str);
+    auto sub_tree_sha1_str = sub_tree.write();
+    tree_object_write.add(400000, dit::objects::TREE, base_folder, sub_tree_sha1_str);
     auto root_tree_sha1_string = tree_object_write.write();
 
     file_to_sha1_map.emplace(base_folder, Sha1AndTypePair(sub_tree_sha1_str, dit::objects::TREE));
@@ -119,7 +78,9 @@ TEST(Object, TreeExpand) {
 
     dit::objects::TreeObject tree_object_read;
     tree_object_read.read(root_tree_sha1_string);
-    tree_object_read.expand();
+    std::unordered_map<boost::filesystem::path, std::string> path_to_sha1_map;
+    tree_object_read.expand(path_to_sha1_map);
+
     EXPECT_TRUE(tree_object_read.items.size() == 51);
     EXPECT_TRUE(tree_object_read.index.size() == 51);
     std::function<void(dit::objects::TreeObject &)> validate_result;
@@ -133,20 +94,22 @@ TEST(Object, TreeExpand) {
 
             if (obj->type() == dit::objects::TREE) {
                 auto *sub_tree = dynamic_cast<dit::objects::TreeObject *>(obj);
-                dit::utils::CharSequence sequence("tree ");
-                sequence.append((size_t) sub_tree->content().length())
-                        .append('\0')
-                        .append(sub_tree->content());
-                EXPECT_EQ(pair.first, dit::utils::sha1digit(sequence));
+                std::ostringstream sequence;
+                sequence << "tree "
+                         << sub_tree->content().length()
+                         << '\n'
+                         << sub_tree->content();
+                EXPECT_EQ(pair.first, dit::utils::sha1digit(sequence.str()));
 
                 validate_result(*sub_tree);
             } else {
                 auto *blob = dynamic_cast<dit::objects::BlobObject *>(obj);
-                dit::utils::CharSequence sequence("blob ");
-                sequence.append((size_t) blob->content().length())
-                        .append('\0')
-                        .append(blob->content());
-                EXPECT_EQ(pair.first, dit::utils::sha1digit(sequence));
+                std::ostringstream sequence;
+                sequence << "blob "
+                         << blob->content().length()
+                         << '\n'
+                         << blob->content();
+                EXPECT_EQ(pair.first, dit::utils::sha1digit(sequence.str()));
             }
 
         }
@@ -164,9 +127,9 @@ TEST(Object, Commit) {
     std::string base_file_path("file_");
     boost::uuids::detail::sha1::digest_type sha1;
     for (int i = 0; i < 100; i++) {
-        dit::objects::BlobObject blob(dit::utils::CharSequence("hello world ").append(size_t(i)));
-        auto sha1_str = blob.write_with_raw_sha1(sha1);
-        tree_object_write.add(100644, dit::objects::BLOB, base_file_path + std::to_string(i), sha1);
+        dit::objects::BlobObject blob(std::string("hello world ").append(std::to_string(i)));
+        auto sha1_str = blob.write();
+        tree_object_write.add(100644, dit::objects::BLOB, base_file_path + std::to_string(i), sha1_str);
     }
 
     auto tree_sha1_str = tree_object_write.write();

@@ -9,9 +9,11 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 #include "utils.h"
 #include "file_system.h"
 #include "exceptions.h"
+#include "index.h"
 
 namespace dit {
     namespace objects {
@@ -126,20 +128,7 @@ namespace dit {
             void
             add(int mode, ObjectType type, const std::string &file_path,const  std::string &sha1);
 
-            void expand() {
-                for (auto &item: items) {
-                    Object *object;
-                    if (item.type == TREE)
-                        object = new TreeObject();
-                    else
-                        object = new BlobObject();
-                    object->read(item.sha1);
-                    if (item.type == TREE)
-                        dynamic_cast<TreeObject *>(object)->expand();
-
-                    index.emplace(item.file_path, object);
-                }
-            }
+            void expand(std::unordered_map<boost::filesystem::path, std::string> &path_to_sha1_map);
         };
 
 
