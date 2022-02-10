@@ -6,6 +6,8 @@
 namespace dit {
     namespace cmd {
 
+        std::string ROOT_COMMIT_ID("0000000000000000000000000000000000000000");
+
         void cmd_commit(const std::vector<std::string> &args) {
             std::string commit_msg;
             std::vector<boost_fs::path> file_paths;

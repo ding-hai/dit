@@ -9,7 +9,7 @@ namespace dit {
         void cmd_log() {
             auto commit_id = refs::read_head();
             std::ostringstream oss;
-            while (commit_id != "0000000000000000000000000000000000000000") {
+            while (commit_id != ROOT_COMMIT_ID) {
                 objects::CommitObject commit;
                 commit.read(commit_id);
                 commit.log(oss);

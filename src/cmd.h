@@ -14,12 +14,15 @@
 #include "refs.h"
 namespace dit{
     namespace cmd{
+        extern std::string ROOT_COMMIT_ID;
         namespace boost_fs = boost::filesystem;
         void cmd_add(const std::vector<std::string> &args);
         const std::string &add_one_file(const boost::filesystem::path& file_path);
         bool cmd_init(const std::string &arg);
         void cmd_commit(const std::vector<std::string> &args);
         void cmd_log();
+        void cmd_reset(const std::vector<std::string> &args);
+        bool reset(const std::string &reset_id);
 
     }
 

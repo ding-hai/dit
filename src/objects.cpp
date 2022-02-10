@@ -81,8 +81,10 @@ namespace dit {
                 object->read(item.sha1);
                 if (item.type == TREE)
                     dynamic_cast<TreeObject *>(object)->expand(path_to_sha1_map);
-                auto &&file_path = boost::filesystem::path(item.file_path);
-                path_to_sha1_map[file_path] = sha1;
+                else{
+                    auto &&file_path = boost::filesystem::path(item.file_path);
+                    path_to_sha1_map[file_path] = item.sha1;
+                }
                 index.emplace(item.file_path, object);
             }
         }

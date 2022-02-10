@@ -16,6 +16,7 @@ namespace dit {
     namespace index {
 
         namespace boost_fs = boost::filesystem;
+        class CommitIndex;
 
         class IndexBase {
         protected:
@@ -34,6 +35,7 @@ namespace dit {
         };
 
         class Index : public IndexBase {
+            friend class CommitIndex;
         private:
             const boost_fs::path index_path_;
 
@@ -56,6 +58,7 @@ namespace dit {
             void save();
 
             std::string to_tree_object();
+
         };
 
         class WorkingIndex : public IndexBase {
@@ -65,7 +68,9 @@ namespace dit {
 
         class CommitIndex : public IndexBase {
         public:
-            CommitIndex(const std::string &sha1);
+            CommitIndex(const objects::CommitObject &commit);
+            void recover_to_working_dir();
+            void swap_to(Index &index);
         };
     }
 }

@@ -103,12 +103,28 @@ namespace dit {
 
         }
 
-        CommitIndex::CommitIndex(const std::string &sha1) {
-            objects::CommitObject commit_object;
-            commit_object.read(sha1);
+        CommitIndex::CommitIndex(const objects::CommitObject &commit) {
             objects::TreeObject tree_object;
-            tree_object.read(commit_object.get_root_tree());
+            tree_object.read(commit.get_root_tree());
             tree_object.expand(index_);
         }
+
+        void CommitIndex::recover_to_working_dir() {
+            for (auto &pair: index_) {
+                objects::BlobObject blob;
+                blob.read(pair.second);
+                auto parent_path = pair.first.parent_path();
+                parent_path = boost_fs::absolute(parent_path, fs::REPOSITORY_ROOT);
+                if (!boost_fs::exists(parent_path))
+                    boost_fs::create_directories(parent_path);
+                fs::file_write(pair.first, blob.content());
+            }
+        }
+
+        void CommitIndex::swap_to(Index &index) {
+            index.index_ = index_;
+        }
+
+
     }
 }

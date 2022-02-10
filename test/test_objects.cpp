@@ -222,15 +222,24 @@ TEST(CMD, cmd_commit){
     dit::cmd::cmd_add(args_of_cmd_add1);
     dit::cmd::cmd_commit(args_of_cmd_commit1);
 
-    std::vector<std::string> args_of_cmd_add2{"src/1.txt"};
+    dit::fs::file_write("cmd.txt", "version 2");
+    std::vector<std::string> args_of_cmd_add2{"cmd.txt"};
     std::vector<std::string> args_of_cmd_commit2{"--m", "hello second commit"};
     dit::cmd::cmd_add(args_of_cmd_add2);
     dit::cmd::cmd_commit(args_of_cmd_commit2);
+//
+//    std::vector<std::string> args_of_cmd_add3{"src/sub/"};
+//    std::vector<std::string> args_of_cmd_commit3{"--m", "hello 3rd commit"};
+//    dit::cmd::cmd_add(args_of_cmd_add3);
+//    dit::cmd::cmd_commit(args_of_cmd_commit3);
 
-    std::vector<std::string> args_of_cmd_add3{"src/sub/"};
-    std::vector<std::string> args_of_cmd_commit3{"--m", "hello 3rd commit"};
-    dit::cmd::cmd_add(args_of_cmd_add3);
-    dit::cmd::cmd_commit(args_of_cmd_commit3);
+    dit::cmd::cmd_log();
 
+}
+
+TEST(CMD, reset){
+    dit::fs::configure_repository_root();
+    dit::cmd::reset("6151c8c734f7ca2d80e5a8b9fe40eff9d553af95");
+    std::cout<<"after reset" << std::endl;
     dit::cmd::cmd_log();
 }
