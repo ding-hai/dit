@@ -26,7 +26,8 @@ namespace dit {
             boost_fs::create_directories(base / fs::REFS / fs::HEADS);
 
             auto root_commit_id = "0000000000000000000000000000000000000000";
-            fs::file_write(base / fs::HEAD, root_commit_id);
+            auto ref_head = "ref: refs/heads/master";
+            fs::file_write(base / fs::HEAD, ref_head);
             fs::file_write(base / fs::REFS / fs::HEADS / fs::MASTER, root_commit_id);
             return true;
         }
