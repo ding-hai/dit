@@ -93,7 +93,7 @@ namespace dit {
             size_t num = 0;
             for (; iterator != end; ++iterator) {
                 boost_fs::path path(*iterator);
-                auto &&dit_path = REPOSITORY_ROOT / REPOSITORY_INTERNAL_PATH;
+                auto dit_path = REPOSITORY_ROOT / REPOSITORY_INTERNAL_PATH;
                 if (path.generic_string().find(dit_path.generic_string()) == 0)
                     continue;
                 if (boost_fs::is_directory(path))

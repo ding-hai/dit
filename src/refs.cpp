@@ -27,14 +27,14 @@ namespace dit {
         }
 
         std::string read_head() {
-            auto &&path = get_ref_path();
+            auto path = get_ref_path();
             std::string commit_id;
             fs::file_read(path, commit_id);
             return commit_id;
         }
 
         bool write_head(const std::string &commit_id) {
-            auto &&path = get_ref_path();
+            auto path = get_ref_path();
             return fs::file_write(path, commit_id);
         }
     }

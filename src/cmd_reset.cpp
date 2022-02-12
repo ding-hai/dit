@@ -8,7 +8,7 @@ namespace dit {
         bool reset(const std::string &reset_id) {
             index::CommitIndex *commit_index = nullptr;
             auto id = refs::read_head();
-            while (id != ROOT_COMMIT_ID) {
+            while (id != utils::ROOT_COMMIT_ID) {
                 objects::CommitObject commit;
                 commit.read(id);
                 if (id == reset_id) {

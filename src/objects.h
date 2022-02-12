@@ -69,7 +69,7 @@ namespace dit {
                 auto type = object_type_to_string(this->type_);
                 std::ostringstream oss;
                 oss << type << ' ' << this->content_.length() << '\n' << this->content_;
-                return std::move(oss.str());
+                return oss.str();
             };
 
             virtual const std::string& write() {

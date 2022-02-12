@@ -22,7 +22,7 @@ namespace std {
 
 namespace dit {
     namespace utils {
-
+        extern std::string ROOT_COMMIT_ID;
 
         void left_trim(std::string &s);
 

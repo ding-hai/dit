@@ -16,7 +16,7 @@ namespace dit {
                 target_path = std::move(boost_fs::path(arg));
             }
 
-            auto &&absolute_path = boost_fs::absolute(target_path);
+            auto absolute_path = boost_fs::absolute(target_path);
             auto repo_root = fs::find_repository(absolute_path);
             if (!repo_root.empty()) {
                 std::cout << "repo exists in " << repo_root.generic_string() << std::endl;

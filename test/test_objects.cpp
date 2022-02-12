@@ -187,18 +187,20 @@ TEST(CMD, add_one_file) {
 // todo make it more automated
 TEST(CMD, cmd_add) {
     boost::filesystem::remove_all(".dit");
-    dit::cmd::cmd_init("");
+    std::vector<std::string> args_init{""};
+    dit::cmd::cmd_init(args_init);
     dit::fs::configure_repository_root();
-    std::vector<std::string> args{"*"};
-    dit::cmd::cmd_add(args);
+    std::vector<std::string> args_add{"*"};
+    dit::cmd::cmd_add(args_add);
 }
 
 TEST(Index, to_tree_object){
     boost::filesystem::remove_all(".dit");
-    dit::cmd::cmd_init("");
+    std::vector<std::string> args_init{""};
+    dit::cmd::cmd_init(args_init);
     dit::fs::configure_repository_root();
-    std::vector<std::string> args{"*"};
-    dit::cmd::cmd_add(args);
+    std::vector<std::string> args_add{"*"};
+    dit::cmd::cmd_add(args_add);
     auto &index = dit::index::Index::instance();
     auto root_tree_sha1 = index.to_tree_object();
     dit::objects::CommitObject commit;
@@ -215,7 +217,8 @@ TEST(Index, to_tree_object){
 
 TEST(CMD, cmd_commit){
     boost::filesystem::remove_all(".dit");
-    dit::cmd::cmd_init("");
+    std::vector<std::string> args_init{""};
+    dit::cmd::cmd_init(args_init);
     dit::fs::configure_repository_root();
     std::vector<std::string> args_of_cmd_add1{"cmd.txt"};
     std::vector<std::string> args_of_cmd_commit1{"--m", "hello first commit"};
@@ -233,7 +236,7 @@ TEST(CMD, cmd_commit){
 //    dit::cmd::cmd_add(args_of_cmd_add3);
 //    dit::cmd::cmd_commit(args_of_cmd_commit3);
 
-    dit::cmd::cmd_log();
+    dit::cmd::cmd_log(std::vector<std::string>());
 
 }
 
@@ -241,5 +244,5 @@ TEST(CMD, reset){
     dit::fs::configure_repository_root();
     dit::cmd::reset("6151c8c734f7ca2d80e5a8b9fe40eff9d553af95");
     std::cout<<"after reset" << std::endl;
-    dit::cmd::cmd_log();
+    dit::cmd::cmd_log(std::vector<std::string>());
 }

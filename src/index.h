@@ -18,6 +18,8 @@ namespace dit {
         namespace boost_fs = boost::filesystem;
         class CommitIndex;
 
+        enum Status{SAME, DELETE, MODIFY, ADD};
+
         class IndexBase {
         protected:
             std::unordered_map<boost_fs::path, std::string> index_;
@@ -27,11 +29,14 @@ namespace dit {
 
             void add(const boost_fs::path &path, const std::string &sha1);
 
-            bool exist(const boost_fs::path &path);
+            bool exist(const boost_fs::path &path) const;
 
-            const std::string &sha1_of_path(const boost_fs::path &path);
+            const std::string &sha1_of_path(const boost_fs::path &path) const;
 
             void clear();
+
+            std::unordered_map<boost_fs::path, Status> compare_to(const IndexBase& other);
+
         };
 
         class Index : public IndexBase {
@@ -67,8 +72,11 @@ namespace dit {
         };
 
         class CommitIndex : public IndexBase {
+        private:
+            void init_with_commit_object(const objects::CommitObject &commit);
         public:
             CommitIndex(const objects::CommitObject &commit);
+            CommitIndex(const std::string &commit_id);
             void recover_to_working_dir();
             void swap_to(Index &index);
         };

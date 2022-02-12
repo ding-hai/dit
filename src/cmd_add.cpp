@@ -49,8 +49,8 @@ namespace dit {
                     fs::recursive_travel(fs::REPOSITORY_ROOT, file_paths);
                     break;
                 }else{
-                    auto &&path = boost_fs::path(str_file_path);
-                    auto &&absolute_path = boost_fs::absolute(path);
+                    auto path = boost_fs::path(str_file_path);
+                    auto absolute_path = boost_fs::absolute(path);
                     if(!boost_fs::exists(absolute_path)) continue;
                     if(boost_fs::is_directory(absolute_path)){
                         fs::recursive_travel(absolute_path, file_paths);
@@ -67,7 +67,7 @@ namespace dit {
             for (auto &file_path: file_paths) {
                 try{
                     auto sha1 = add_one_file(file_path);
-                    auto &&relative_path = boost_fs::relative(file_path, fs::REPOSITORY_ROOT);
+                    auto relative_path = boost_fs::relative(file_path, fs::REPOSITORY_ROOT);
                     global_index.remove(relative_path);
                     global_index.add(relative_path, sha1);
                 }catch(exceptions::FileException& exception){

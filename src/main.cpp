@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
     handle(commit);
     handle(reset);
     handle(log);
+    handle(status);
 
     return 0;
 }
