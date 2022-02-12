@@ -6,7 +6,9 @@
 namespace dit {
     namespace cmd {
 
-        bool cmd_init(const std::string &arg) {
+        void cmd_init(const std::vector<std::string> &args) {
+            if (args.size() != 1) return;
+            const std::string &arg = args[0];
             boost_fs::path target_path;
             if (arg.empty() || arg == ".") {
                 target_path = boost_fs::current_path();
@@ -18,7 +20,7 @@ namespace dit {
             auto repo_root = fs::find_repository(absolute_path);
             if (!repo_root.empty()) {
                 std::cout << "repo exists in " << repo_root.generic_string() << std::endl;
-                return false;
+                return;
             }
             fs::REPOSITORY_ROOT = absolute_path;
             const auto base = fs::REPOSITORY_ROOT / fs::REPOSITORY_INTERNAL_PATH;
@@ -29,7 +31,6 @@ namespace dit {
             auto ref_head = "ref: refs/heads/master";
             fs::file_write(base / fs::HEAD, ref_head);
             fs::file_write(base / fs::REFS / fs::HEADS / fs::MASTER, root_commit_id);
-            return true;
         }
 
 
