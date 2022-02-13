@@ -15,8 +15,8 @@
 #include "exceptions.h"
 
 namespace dit {
+    namespace boost_fs = boost::filesystem;
     namespace fs {
-        namespace boost_fs = boost::filesystem;
 
         extern boost_fs::path REPOSITORY_ROOT;
         extern const boost_fs::path REPOSITORY_INTERNAL_PATH;

@@ -108,6 +108,8 @@ namespace dit {
                 std::string sha1;
             };
 
+        private:
+            boost_fs::path dir;
         public:
             std::vector<Item> items;
             std::map<std::string, Object *> index;

@@ -74,15 +74,20 @@ namespace dit {
         void TreeObject::expand(std::unordered_map<boost::filesystem::path, std::string> &path_to_sha1_map) {
             for (auto &item: items) {
                 Object *object;
-                if (item.type == TREE)
+                TreeObject *tree;
+                if (item.type == TREE){
                     object = new TreeObject();
+                    tree = dynamic_cast<TreeObject *>(object);
+                    if(tree)
+                        tree->dir = boost_fs::path(item.file_path);
+                }
                 else
                     object = new BlobObject();
                 object->read(item.sha1);
-                if (item.type == TREE)
-                    dynamic_cast<TreeObject *>(object)->expand(path_to_sha1_map);
+                if (item.type == TREE && tree != nullptr)
+                    tree->expand(path_to_sha1_map);
                 else{
-                    auto file_path = boost::filesystem::path(item.file_path);
+                    auto file_path = this->dir/ item.file_path;
                     path_to_sha1_map[file_path] = item.sha1;
                 }
                 index.emplace(item.file_path, object);

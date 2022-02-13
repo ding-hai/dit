@@ -7,6 +7,11 @@
 namespace dit {
     namespace index {
 
+        std::string& get_tag(Status status){
+            static std::string tags[] {"same", "rm", "modified", "new file", "last"};
+            return tags[status];
+        }
+
         size_t IndexBase::remove(const boost_fs::path &path) {
             if (path.empty()) return 0;
             std::vector<boost_fs::path> to_be_removed_paths;

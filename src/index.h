@@ -15,10 +15,13 @@
 namespace dit {
     namespace index {
 
-        namespace boost_fs = boost::filesystem;
         class CommitIndex;
 
-        enum Status{SAME, DELETE, MODIFY, ADD};
+        enum Status {
+            SAME, DELETE, MODIFY, ADD, LAST
+        };
+
+        std::string& get_tag(Status status);
 
         class IndexBase {
         protected:
@@ -35,12 +38,13 @@ namespace dit {
 
             void clear();
 
-            std::unordered_map<boost_fs::path, Status> compare_to(const IndexBase& other);
+            std::unordered_map<boost_fs::path, Status> compare_to(const IndexBase &other);
 
         };
 
         class Index : public IndexBase {
             friend class CommitIndex;
+
         private:
             const boost_fs::path index_path_;
 
@@ -74,10 +78,16 @@ namespace dit {
         class CommitIndex : public IndexBase {
         private:
             void init_with_commit_object(const objects::CommitObject &commit);
+
         public:
+            CommitIndex() = default;
+
             CommitIndex(const objects::CommitObject &commit);
+
             CommitIndex(const std::string &commit_id);
+
             void recover_to_working_dir();
+
             void swap_to(Index &index);
         };
     }

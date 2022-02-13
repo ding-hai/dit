@@ -15,7 +15,6 @@
 namespace dit{
     namespace cmd{
 
-        namespace boost_fs = boost::filesystem;
         void cmd_add(const std::vector<std::string> &args);
         const std::string &add_one_file(const boost::filesystem::path& file_path);
         void cmd_init(const std::vector<std::string> &args);

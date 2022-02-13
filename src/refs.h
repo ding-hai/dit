@@ -10,7 +10,6 @@
 
 namespace dit {
     namespace refs {
-        namespace boost_fs = boost::filesystem;
 
         boost_fs::path get_ref_path();
 
