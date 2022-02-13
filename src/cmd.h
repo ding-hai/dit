@@ -23,6 +23,9 @@ namespace dit{
         void cmd_reset(const std::vector<std::string> &args);
         bool reset(const std::string &reset_id);
         void cmd_status(const std::vector<std::string> &args);
+        bool rm_one_file(const boost::filesystem::path &file_path, index::CommitIndex &commit_index,
+                         index::WorkingIndex &working_index, bool force) ;
+        void cmd_rm(const std::vector<std::string> &args);
     }
 
 }

@@ -12,7 +12,7 @@ set(Zlib_INCLUDE_DIR ${common_repository}/zlib-1.2.11/include)
 set(Zlib_LIBRARY_DIR ${common_repository}/zlib-1.2.11/lib)
 
 
-set(SRC_FILES  src/cmd_status.cpp src/cmd_reset.cpp src/cmd_log.cpp src/refs.h src/refs.cpp src/cmd_commit.cpp src/cmd_init.cpp src/index.cpp src/index.h src/cmd.h src/cmd_add.cpp src/objects.cpp src/objects.h src/utils.cpp src/utils.h  src/exceptions.cpp src/exceptions.h src/file_system.cpp src/file_system.h)
+set(SRC_FILES  src/cmd_rm.cpp src/cmd_status.cpp src/cmd_reset.cpp src/cmd_log.cpp src/refs.h src/refs.cpp src/cmd_commit.cpp src/cmd_init.cpp src/index.cpp src/index.h src/cmd.h src/cmd_add.cpp src/objects.cpp src/objects.h src/utils.cpp src/utils.h  src/exceptions.cpp src/exceptions.h src/file_system.cpp src/file_system.h)
 
 
 # main executable

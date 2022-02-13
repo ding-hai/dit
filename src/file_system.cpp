@@ -62,17 +62,17 @@ namespace dit {
         }
 
         bool file_read(const boost::filesystem::path &file_path, std::string &read_result) {
+            read_result.clear();
             if (!boost::filesystem::exists(file_path)) return false;
             auto file_size = boost::filesystem::file_size(file_path);
             // 5M
             if (file_size > (5 << 20))
                 return false;
             if (file_size == 0)
-                return false;
+                return true;
             char buffer[file_size];
             boost::filesystem::ifstream file(file_path, std::ios::in | std::ios::binary);
             file.read(buffer, file_size);
-            read_result.clear();
             read_result.append(buffer, buffer + file_size);
             return true;
         }

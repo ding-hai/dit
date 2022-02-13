@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
     handle(init);
     dit::fs::configure_repository_root();
     handle(add);
+    handle(rm);
     handle(commit);
     handle(reset);
     handle(log);
