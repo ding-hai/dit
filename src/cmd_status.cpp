@@ -32,7 +32,7 @@ namespace dit {
             // compare index and commit
             auto head_commit_id = refs::read_head();
             index::CommitIndex *commit_index = nullptr;
-            if (head_commit_id != utils::ROOT_COMMIT_ID)
+            if (head_commit_id != utils::DUMMY_COMMIT_ID)
                 commit_index = new index::CommitIndex(head_commit_id);
             else
                 commit_index = new index::CommitIndex;

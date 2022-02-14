@@ -9,7 +9,6 @@ namespace dit {
         void cmd_commit(const std::vector<std::string> &args) {
             std::string commit_msg;
             std::vector<boost_fs::path> file_paths;
-            namespace program_options = boost::program_options;
 
             program_options::options_description desc("options");
             desc.add_options()

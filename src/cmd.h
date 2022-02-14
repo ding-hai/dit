@@ -14,7 +14,7 @@
 #include "refs.h"
 namespace dit{
     namespace cmd{
-
+        namespace program_options = boost::program_options;
         void cmd_add(const std::vector<std::string> &args);
         const std::string &add_one_file(const boost::filesystem::path& file_path);
         void cmd_init(const std::vector<std::string> &args);
@@ -26,6 +26,7 @@ namespace dit{
         bool rm_one_file(const boost::filesystem::path &file_path, index::CommitIndex &commit_index,
                          index::WorkingIndex &working_index, bool force) ;
         void cmd_rm(const std::vector<std::string> &args);
+        void cmd_diff(const std::vector<std::string> &args);
     }
 
 }

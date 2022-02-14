@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
     handle(add);
     handle(rm);
     handle(commit);
+    handle(diff);
     handle(reset);
     handle(log);
     handle(status);

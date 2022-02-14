@@ -8,7 +8,7 @@ namespace dit {
         bool reset(const std::string &reset_id) {
             index::CommitIndex *commit_index = nullptr;
             auto id = refs::read_head();
-            while (id != utils::ROOT_COMMIT_ID) {
+            while (id != utils::DUMMY_COMMIT_ID) {
                 objects::CommitObject commit;
                 commit.read(id);
                 if (id == reset_id) {
@@ -36,7 +36,6 @@ namespace dit {
         void cmd_reset(const std::vector<std::string> &args) {
             std::string reset_id;
             std::vector<boost_fs::path> file_paths;
-            namespace program_options = boost::program_options;
 
             program_options::options_description desc("options");
             desc.add_options()

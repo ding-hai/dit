@@ -7,10 +7,120 @@
 namespace dit {
     namespace index {
 
-        std::string& get_tag(Status status){
-            static std::string tags[] {"same", "rm", "modified", "new file", "last"};
+        std::string &get_tag(Status status) {
+            static std::string tags[]{"same", "rm", "modified", "new file", "last"};
             return tags[status];
         }
+
+        void diff(std::vector<std::pair<std::string, Status>> &result, const std::vector<std::string>& my_lines, const std::vector<std::string>& your_lines){
+            //todo myers diff core
+            const int n = my_lines.size();
+            const int m = your_lines.size();
+            const int max = m+n;
+            int x=0 , y = 0;
+            std::vector<std::map<int,int>> trace(max+1);
+            int size_of_trace = 0;
+
+            for(int d=0; d<=max; d++){
+                auto &v = trace[d];
+                size_of_trace++;
+                if(d==0){
+                    int t = 0;
+                    while(t < n && t < m && my_lines[t] == your_lines[t]) {
+                        t++;
+                    }
+
+                    v[0] = t;
+                    if (t == n && t == m) {
+                        goto end_loop;
+                    }
+                    continue;
+                }
+
+                auto &last_v = trace[d-1];
+
+                for(int k = -d; k<=d; k+=2){
+                    if (k == -d || (k != d && last_v[k-1] < last_v[k+1])){
+                        x = last_v[k+1];
+                    }else{
+                        x = last_v[k-1] + 1;
+                    }
+
+                    y = x - k;
+
+                    while (x < n && y < m && my_lines[x] == your_lines[y]) {
+                        x++;
+                        y++;
+                    }
+
+                    v[k] = x;
+                    if (x == n && y == m) {
+                        goto end_loop;
+                    }
+                }
+
+            }
+
+            end_loop: int dummy;
+            std::vector<Status> script;
+
+            x = n;
+            y = m;
+
+            int k=0, prev_k=0, prev_x=0, prev_y = 0;
+            for (int d = size_of_trace - 1; d > 0; d--) {
+                k = x- y;
+                auto &last_v = trace[d-1];
+                if(k==-d || (k!=d && last_v[k-1] < last_v[k+1])){
+                    prev_k = k+1;
+                }else{
+                    prev_k = k-1;
+                }
+
+                prev_x = last_v[prev_k];
+                prev_y= prev_x - prev_k;
+
+                while(x > prev_x && y> prev_y){
+                    script.push_back(SAME);
+                    x--;
+                    y--;
+                }
+
+                if(x == prev_x){
+                    script.push_back(ADD);
+                }else {
+                    script.push_back(DELETE);
+                }
+
+                x = prev_x;
+                y = prev_y;
+
+            }
+
+            if (trace[0][0] != 0){
+                for(int i=0; i<trace[0][0]; i++){
+                    script.push_back(SAME);
+                }
+            }
+            std::reverse(script.begin(), script.end());
+            int my_idx = 0, your_idx = 0;
+            for(auto &status : script){
+                switch (status) {
+                    case ADD:
+                        result.emplace_back(your_lines[your_idx++], ADD);
+                        break;
+                    case SAME:
+                        result.emplace_back(my_lines[my_idx], SAME);
+                        my_idx++;
+                        your_idx++;
+                        break;
+                    case DELETE:
+                        result.emplace_back(my_lines[my_idx++], DELETE);
+                        break;
+                }
+            }
+        }
+
 
         size_t IndexBase::remove(const boost_fs::path &path) {
             if (path.empty()) return 0;
@@ -42,7 +152,7 @@ namespace dit {
         const std::string &IndexBase::sha1_of_path(const boost_fs::path &path) const {
             auto it = index_.find(path);
             if (it == index_.end()) {
-                return utils::ROOT_COMMIT_ID;
+                return utils::DUMMY_COMMIT_ID;
             }
             return it->second;
         }
@@ -83,6 +193,40 @@ namespace dit {
                     diffs[path] = DELETE;
                 }
             }
+            return diffs;
+        }
+
+        std::vector<std::pair<std::string,Status>> IndexBase::compare_to(const IndexBase &other, const boost_fs::path &file_path) {
+            auto exist_in_my_index = this->exist(file_path);
+            auto exist_in_other_index = this->exist(file_path);
+            objects::BlobObject blob_in_my_index;
+            objects::BlobObject blob_in_other_index;
+            std::vector<std::pair<std::string,Status>> diffs;
+            if(!exist_in_my_index && !exist_in_other_index) {
+                //TODO maybe exception case
+                return diffs;
+            } else if(!exist_in_my_index) {
+                //TODO add
+                return diffs;
+            } else if(!exist_in_other_index) {
+                //TODO delete
+                return diffs;
+            }
+
+            // exist in both index
+            auto &sha1_in_my_index = this->sha1_of_path(file_path);
+            auto &sha1_in_other_index = other.sha1_of_path(file_path);
+            std::vector<std::string> my_lines;
+            std::vector<std::string> other_lines;
+
+            blob_in_my_index.read(sha1_in_my_index);
+            blob_in_other_index.read(sha1_in_other_index);
+
+            utils::split(my_lines, blob_in_my_index.content(), '\n');
+            utils::split(other_lines, blob_in_other_index.content(), '\n');
+
+            diff(diffs, my_lines, other_lines);
+
             return diffs;
         }
 
@@ -149,8 +293,8 @@ namespace dit {
             std::string file_content;
             for (auto &path: all_paths) {
                 fs::file_read(path, file_content);
-                std::string sha1 = utils::ROOT_COMMIT_ID;
-                if (boost_fs::is_regular_file(path)){
+                std::string sha1 = utils::DUMMY_COMMIT_ID;
+                if (boost_fs::is_regular_file(path)) {
                     objects::BlobObject blob(file_content);
                     auto blob_content = blob.to_string();
                     sha1 = utils::sha1digit(blob_content);
@@ -169,7 +313,7 @@ namespace dit {
             init_with_commit_object(commit);
         }
 
-        CommitIndex::CommitIndex(const std::string &commit_id){
+        CommitIndex::CommitIndex(const std::string &commit_id) {
             objects::CommitObject commit;
             commit.read(commit_id);
             init_with_commit_object(commit);

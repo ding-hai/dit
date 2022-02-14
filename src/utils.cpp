@@ -7,7 +7,7 @@
 namespace dit {
     namespace utils {
 
-        std::string ROOT_COMMIT_ID("0000000000000000000000000000000000000000");
+        std::string DUMMY_COMMIT_ID("0000000000000000000000000000000000000000");
 
         std::string sha1digit(const std::string &content) {
             boost::uuids::detail::sha1 sha1;

@@ -34,7 +34,6 @@ namespace dit {
         void cmd_rm(const std::vector<std::string> &args) {
             std::vector<std::string> str_file_paths;
             std::vector<boost_fs::path> file_paths;
-            namespace program_options = boost::program_options;
 
             program_options::options_description desc("options");
             desc.add_options()

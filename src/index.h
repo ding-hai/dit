@@ -23,6 +23,8 @@ namespace dit {
 
         std::string& get_tag(Status status);
 
+        void diff(std::vector<Status> &result, const std::vector<std::string>& my_lines, const std::vector<std::string>& your_lines);
+
         class IndexBase {
         protected:
             std::unordered_map<boost_fs::path, std::string> index_;
@@ -39,7 +41,7 @@ namespace dit {
             void clear();
 
             std::unordered_map<boost_fs::path, Status> compare_to(const IndexBase &other);
-
+            std::vector<std::pair<std::string,Status>> compare_to(const IndexBase &other, const boost_fs::path& file_path);
         };
 
         class Index : public IndexBase {

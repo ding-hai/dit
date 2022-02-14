@@ -22,7 +22,7 @@ namespace std {
 
 namespace dit {
     namespace utils {
-        extern std::string ROOT_COMMIT_ID;
+        extern std::string DUMMY_COMMIT_ID;
 
         void left_trim(std::string &s);
 
@@ -37,6 +37,8 @@ namespace dit {
         uint32_t min_pow2_greater_than(uint32_t n);
 
         uint64_t min_pow2_greater_than(uint64_t n);
+
+
 
     }
 }
